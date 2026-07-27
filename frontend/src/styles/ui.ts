@@ -37,7 +37,7 @@ export const buttonGhostClass =
   'shrink-0 cursor-pointer self-center whitespace-nowrap rounded-panel border border-border-strong bg-transparent px-[0.65rem] py-[0.35rem] font-sans text-[0.78rem] font-medium text-muted transition-[background,border-color,color,opacity] duration-[140ms] ease-in-out hover:enabled:border-muted hover:enabled:bg-surface-raised hover:enabled:text-ink disabled:cursor-not-allowed disabled:opacity-55';
 
 const jobItemBaseClass =
-  'grid w-full cursor-pointer grid-cols-[1fr_auto] gap-x-[0.65rem] gap-y-[0.15rem] rounded-panel border border-l-[3px] px-[0.65rem] py-[0.55rem] text-left font-normal text-ink transition-[border-color,background] duration-[140ms] ease-in-out focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-accent';
+  'grid w-full cursor-pointer grid-cols-[1fr_auto] gap-x-[0.65rem] gap-y-[0.15rem] rounded-panel border border-l-[3px] px-[0.65rem] py-[0.55rem] text-left font-normal text-ink transition-[border-color,background-color] duration-300 ease-in-out focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-accent';
 
 export function jobItemClass(isActive: boolean): string {
   if (isActive) {
