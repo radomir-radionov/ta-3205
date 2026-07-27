@@ -2,22 +2,31 @@ import { useEffect } from 'react';
 import { useJobsStore } from '../store/jobsStore';
 import { TERMINAL_JOB_STATUSES } from '../types/job';
 
-const POLL_INTERVAL_MS = 1500;
+const POLL_INTERVAL_MS = 2000;
 
 export function useJobPolling(): void {
   const activeJobId = useJobsStore((s) => s.activeJobId);
-  const status = useJobsStore((s) => s.details?.status);
+  // Boolean keeps the effect stable across pending → in_progress (same true).
+  const shouldPollActive = useJobsStore((s) => {
+    if (!s.activeJobId) {
+      return false;
+    }
+    const status = s.details?.status;
+    return !status || !TERMINAL_JOB_STATUSES.has(status);
+  });
+  // Active job's list row is patched by refreshActiveJob — only poll the list
+  // for other non-terminal jobs the user is not currently viewing.
   const shouldPollList = useJobsStore((s) =>
-    s.jobs.some((job) => !TERMINAL_JOB_STATUSES.has(job.status)),
+    s.jobs.some(
+      (job) =>
+        !TERMINAL_JOB_STATUSES.has(job.status) && job.id !== s.activeJobId,
+    ),
   );
   const refreshActiveJob = useJobsStore((s) => s.refreshActiveJob);
   const fetchJobs = useJobsStore((s) => s.fetchJobs);
 
   useEffect(() => {
-    if (!activeJobId) {
-      return;
-    }
-    if (status && TERMINAL_JOB_STATUSES.has(status)) {
+    if (!activeJobId || !shouldPollActive) {
       return;
     }
 
@@ -29,7 +38,7 @@ export function useJobPolling(): void {
     return () => {
       window.clearInterval(timer);
     };
-  }, [activeJobId, status, refreshActiveJob]);
+  }, [activeJobId, shouldPollActive, refreshActiveJob]);
 
   useEffect(() => {
     if (!shouldPollList) {
