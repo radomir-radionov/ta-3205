@@ -16,7 +16,7 @@ type JobsState = {
   detailError: string | null;
   cancelError: string | null;
   clearError: string | null;
-  fetchJobs: () => Promise<void>;
+  fetchJobs: (options?: { silent?: boolean }) => Promise<void>;
   createJob: (urls: string[]) => Promise<void>;
   selectJob: (jobId: string) => Promise<void>;
   refreshActiveJob: () => Promise<void>;
@@ -60,6 +60,7 @@ function patchJobInList(jobs: JobSummary[], details: JobDetail): JobSummary[] {
 }
 
 let refreshInFlight = false;
+let listRefreshInFlight = false;
 
 export const useJobsStore = create<JobsState>((set, get) => ({
   jobs: [],
@@ -76,16 +77,32 @@ export const useJobsStore = create<JobsState>((set, get) => ({
   cancelError: null,
   clearError: null,
 
-  fetchJobs: async () => {
-    set({ listLoading: true, listError: null });
+  fetchJobs: async (options) => {
+    const silent = options?.silent === true;
+    if (silent) {
+      if (listRefreshInFlight) {
+        return;
+      }
+      listRefreshInFlight = true;
+    } else {
+      set({ listLoading: true, listError: null });
+    }
     try {
       const jobs = await jobsApi.fetchJobs();
-      set({ jobs, listLoading: false });
+      set(silent ? { jobs } : { jobs, listLoading: false });
     } catch (error) {
-      set({
-        listLoading: false,
-        listError: errorMessage(error, 'Failed to load jobs'),
-      });
+      set(
+        silent
+          ? { listError: errorMessage(error, 'Failed to load jobs') }
+          : {
+              listLoading: false,
+              listError: errorMessage(error, 'Failed to load jobs'),
+            },
+      );
+    } finally {
+      if (silent) {
+        listRefreshInFlight = false;
+      }
     }
   },
 
@@ -121,7 +138,11 @@ export const useJobsStore = create<JobsState>((set, get) => ({
       if (get().activeJobId !== jobId) {
         return;
       }
-      set({ details, detailLoading: false });
+      set({
+        details,
+        detailLoading: false,
+        jobs: patchJobInList(get().jobs, details),
+      });
     } catch (error) {
       if (get().activeJobId !== jobId) {
         return;
